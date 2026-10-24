@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Packaging Management System</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body class="home-page">
+<div class="home-layout">
+    <aside class="home-sidebar">
+        <div class="brand-lockup">
+            <span class="brand-mark">P</span>
+            <span><strong>PACKAGING</strong><small>FACTORY OPERATIONS</small></span>
+        </div>
+        <p class="sidebar-label">MAIN MODULES</p>
+        <nav class="home-navigation" aria-label="Main modules">
+            <a class="nav-item" th:href="@{/attendance}"><span class="nav-index">01</span><span>Attendance</span><span class="nav-arrow">&rsaquo;</span></a>
+            <a class="nav-item" th:href="@{/production}"><span class="nav-index">02</span><span>Production Entry</span><span class="nav-arrow">&rsaquo;</span></a>
+            <a class="nav-item" th:href="@{/summary}"><span class="nav-index">03</span><span>Summary</span><span class="nav-arrow">&rsaquo;</span></a>
+            <a class="nav-item" th:href="@{/report}"><span class="nav-index">04</span><span>Report</span><span class="nav-arrow">&rsaquo;</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="status-light"></span>
+            <span><strong>Local system</strong><small>Records saved on this computer</small></span>
+        </div>
+    </aside>
+
+    <main class="home-main">
+        <header class="home-header">
+            <div>
+                <p class="eyebrow">FACTORY OPERATIONS / OVERVIEW</p>
+                <h1>Packaging Management System</h1>
+                <p class="home-subtitle">Daily attendance and production at a glance.</p>
+            </div>
+            <div class="date-chip"><span>Today</span><strong th:text="${today}"></strong></div>
+        </header>
+
+        <section class="demo-notice" aria-label="Demo data notice">
+            <strong>DEMO DATA</strong>
+            <span>Starter records are clearly labeled. Replace them with your factory's employee and production information.</span>
+        </section>
+
+        <section class="stat-grid" aria-label="Today's totals">
+            <article class="stat-card stat-present">
+                <span class="stat-label">Present today</span>
+                <strong class="stat-value" th:text="${todaySummary.attendance.present}"></strong>
+                    <span class="stat-caption" th:text="|of ${todaySummary.attendance.manpower} recorded|"></span>
+            </article>
+            <article class="stat-card stat-absent">
+                <span class="stat-label">Absent today</span>
+                <strong class="stat-value" th:text="${todaySummary.attendance.absent}"></strong>
+                <span class="stat-caption">from saved attendance</span>
+            </article>
+            <article class="stat-card stat-rate">
+                <span class="stat-label">Attendance rate</span>
+                <strong class="stat-value" th:text="${#numbers.formatDecimal(todaySummary.attendance.percentage, 1, 1) + '%'}"></strong>
+                <span class="stat-caption">present / recorded manpower</span>
+            </article>
+            <article class="stat-card stat-production">
+                <span class="stat-label">Production today</span>
+                <strong class="stat-value" th:text="${todaySummary.production.total}"></strong>
+                <span class="stat-caption">units recorded</span>
+            </article>
+        </section>
+
+        <section class="detail-grid">
+            <article class="panel">
+                <div class="panel-heading">
+                    <div><p class="eyebrow">PEOPLE</p><h2>Attendance by team</h2></div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>Team</th><th>Manpower</th><th>Present</th><th>Absent</th><th>Rate</th></tr></thead>
+                        <tbody>
+                        <tr th:each="team : ${todaySummary.teams}">
+                            <td th:text="${team.teamName}"></td><td th:text="${team.manpower}"></td>
+                            <td th:text="${team.present}"></td><td th:text="${team.absent}"></td>
+                            <td th:text="${#numbers.formatDecimal(team.percentage, 1, 1) + '%'}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(todaySummary.teams)}"><td colspan="5">No attendance recorded for today.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-heading">
+                    <div><p class="eyebrow">OUTPUT</p><h2>Production by part</h2></div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>Part number</th><th>Quantity</th></tr></thead>
+                        <tbody>
+                        <tr th:each="part : ${todaySummary.production.byPart}">
+                            <td th:text="${part.name}"></td><td th:text="${part.quantity}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(todaySummary.production.byPart)}"><td colspan="2">No production recorded for today.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </section>
+
+        <footer class="home-footer">Totals above use saved database records for the selected day. Sample employee names and quantities are not real factory data.</footer>
+    </main>
+</div>
+</body>
+</html>

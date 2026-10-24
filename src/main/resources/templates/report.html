@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Report | Packaging Management System</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<header class="page-header"><a class="home-link" th:href="@{/}">Home</a><h1>Report</h1></header>
+<main class="page-shell">
+    <p class="message error" th:if="${error}" th:text="${error}"></p>
+    <section class="panel">
+        <h2>Report Filters</h2>
+        <form class="filter-form" method="get" th:action="@{/report}">
+            <input type="hidden" name="generate" value="true">
+            <label>Report type
+                <select name="type">
+                    <option value="ATTENDANCE" th:selected="${type == 'ATTENDANCE'}">Attendance Report</option>
+                    <option value="PRODUCTION" th:selected="${type == 'PRODUCTION'}">Production Report</option>
+                    <option value="COMBINED" th:selected="${type == 'COMBINED'}">Combined Attendance and Production Report</option>
+                </select>
+            </label>
+            <label>From date<input type="date" name="fromDate" th:value="${fromDate}"></label>
+            <label>To date<input type="date" name="toDate" th:value="${toDate}"></label>
+            <label>Team
+                <select name="teamId"><option value="">All teams</option>
+                    <option th:each="team : ${teams}" th:value="${team.id}"
+                            th:selected="${teamId != null and team.id == teamId}" th:text="${team.name}"></option>
+                </select>
+            </label>
+            <label>Part number
+                <select name="partId"><option value="">All parts</option>
+                    <option th:each="part : ${parts}" th:value="${part.id}"
+                            th:selected="${partId != null and part.id == partId}"
+                            th:text="${part.code + (part.active ? '' : ' (Inactive)')}"></option>
+                </select>
+            </label>
+            <label>Mark
+                <select name="markId"><option value="">All marks</option>
+                    <option th:each="mark : ${marks}" th:value="${mark.id}"
+                            th:selected="${markId != null and mark.id == markId}"
+                            th:text="${mark.code + (mark.active ? '' : ' (Inactive)')}"></option>
+                </select>
+            </label>
+            <label>Shift
+                <select name="shiftId"><option value="">All shifts</option>
+                    <option th:each="shift : ${shifts}" th:value="${shift.id}"
+                            th:selected="${shiftId != null and shift.id == shiftId}"
+                            th:text="${shift.code + (shift.active ? '' : ' (Inactive)')}"></option>
+                </select>
+            </label>
+            <button type="submit">Generate Report</button>
+            <a class="button-link secondary-button" th:href="@{/report}">Clear Filters</a>
+        </form>
+    </section>
+
+    <section class="panel" id="generated-report" th:if="${generated}">
+        <div class="report-heading">
+            <div>
+                <h2>Packaging Management System</h2>
+                <p class="report-title" th:text="${report.type == 'ATTENDANCE' ? 'Attendance Report' : (report.type == 'PRODUCTION' ? 'Production Report' : 'Combined Attendance and Production Report')}"></p>
+                <p>Date range: <span th:text="${report.fromDate != null ? report.fromDate : 'All dates'}"></span> to
+                    <span th:text="${report.toDate != null ? report.toDate : 'All dates'}"></span></p>
+                <p>Generated: <span th:text="${report.generatedAt}"></span></p>
+            </div>
+            <div class="actions report-actions">
+                <a class="button-link secondary-button" href="#generated-report">View Report</a>
+                <a class="button-link" th:href="@{/report/export/excel(type=${type},fromDate=${fromDate},toDate=${toDate},teamId=${teamId},partId=${partId},markId=${markId},shiftId=${shiftId})}">Export to Excel (CSV)</a>
+                <a class="button-link" target="_blank" th:href="@{/report/print(type=${type},fromDate=${fromDate},toDate=${toDate},teamId=${teamId},partId=${partId},markId=${markId},shiftId=${shiftId})}">Export to PDF / Print</a>
+            </div>
+        </div>
+
+        <section th:if="${report.type != 'PRODUCTION'}">
+            <h3>Attendance</h3>
+            <div class="table-scroll">
+                <table><thead><tr><th>Date</th><th>Employee Number</th><th>Employee Name</th><th>Team</th><th>Status</th><th>Total Manpower</th><th>Present</th><th>Absent</th><th>Attendance</th></tr></thead>
+                    <tbody><tr th:each="row : ${report.attendance}">
+                        <td th:text="${row.date}"></td><td th:text="${row.employeeNumber}"></td>
+                        <td th:text="${row.employeeName}"></td><td th:text="${row.teamName}"></td>
+                        <td th:text="${row.status == 'P' ? 'P — Present' : 'A — Absent'}"></td>
+                        <td th:text="${report.dailyAttendance[row.date].manpower}"></td>
+                        <td th:text="${report.dailyAttendance[row.date].present}"></td>
+                        <td th:text="${report.dailyAttendance[row.date].absent}"></td>
+                        <td th:text="${#numbers.formatDecimal(report.dailyAttendance[row.date].percentage, 1, 1) + '%'}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(report.attendance)}"><td colspan="9">No attendance records matched the selected filters.</td></tr></tbody>
+                </table>
+            </div>
+            <p class="summary-line">Filtered attendance totals — manpower: <strong th:text="${report.attendanceTotals.manpower}"></strong>,
+                present: <strong th:text="${report.attendanceTotals.present}"></strong>, absent: <strong th:text="${report.attendanceTotals.absent}"></strong>,
+                attendance: <strong th:text="${#numbers.formatDecimal(report.attendanceTotals.percentage, 1, 1) + '%'}"></strong></p>
+        </section>
+
+        <section th:if="${report.type != 'ATTENDANCE'}">
+            <h3>Production</h3>
+            <div class="table-scroll">
+                <table><thead><tr><th>Date</th><th>Part Number</th><th>Mark</th><th>Shift</th><th>Production Quantity</th></tr></thead>
+                    <tbody><tr th:each="row : ${report.production}">
+                        <td th:text="${row.date}"></td><td th:text="${row.partNumber}"></td>
+                        <td th:text="${row.markName}"></td><td th:text="${row.shiftName}"></td><td th:text="${row.quantity}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(report.production)}"><td colspan="5">No production records matched the selected filters.</td></tr></tbody>
+                    <tfoot><tr><th colspan="4">Total production</th><th th:text="${report.productionTotal}"></th></tr></tfoot>
+                </table>
+            </div>
+        </section>
+    </section>
+</main>
+</body>
+</html>

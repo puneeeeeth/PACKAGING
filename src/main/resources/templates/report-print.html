@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Printable Report | Packaging Management System</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body class="print-page" onload="window.print()">
+<main class="page-shell">
+    <div class="actions no-print"><button type="button" onclick="window.print()">Print / Save as PDF</button></div>
+    <header class="report-heading">
+        <div>
+            <h1>Packaging Management System</h1>
+            <h2 th:text="${report.type == 'ATTENDANCE' ? 'Attendance Report' : (report.type == 'PRODUCTION' ? 'Production Report' : 'Combined Attendance and Production Report')}"></h2>
+            <p>Date range: <span th:text="${report.fromDate != null ? report.fromDate : 'All dates'}"></span> to
+                <span th:text="${report.toDate != null ? report.toDate : 'All dates'}"></span></p>
+            <p>Generated: <span th:text="${report.generatedAt}"></span></p>
+        </div>
+    </header>
+    <section th:if="${report.type != 'PRODUCTION'}">
+        <h3>Attendance</h3>
+        <table><thead><tr><th>Date</th><th>Employee Number</th><th>Employee Name</th><th>Team</th><th>Status</th><th>Total Manpower</th><th>Present</th><th>Absent</th><th>Attendance</th></tr></thead>
+            <tbody><tr th:each="row : ${report.attendance}">
+                <td th:text="${row.date}"></td><td th:text="${row.employeeNumber}"></td><td th:text="${row.employeeName}"></td>
+                <td th:text="${row.teamName}"></td><td th:text="${row.status}"></td>
+                <td th:text="${report.dailyAttendance[row.date].manpower}"></td><td th:text="${report.dailyAttendance[row.date].present}"></td>
+                <td th:text="${report.dailyAttendance[row.date].absent}"></td>
+                <td th:text="${#numbers.formatDecimal(report.dailyAttendance[row.date].percentage, 1, 1) + '%'}"></td>
+            </tr><tr th:if="${#lists.isEmpty(report.attendance)}"><td colspan="9">No attendance records matched the selected filters.</td></tr></tbody>
+        </table>
+        <p>Filtered totals — manpower: <span th:text="${report.attendanceTotals.manpower}"></span>, present: <span th:text="${report.attendanceTotals.present}"></span>,
+            absent: <span th:text="${report.attendanceTotals.absent}"></span>, attendance: <span th:text="${#numbers.formatDecimal(report.attendanceTotals.percentage, 1, 1) + '%'}"></span></p>
+    </section>
+    <section th:if="${report.type != 'ATTENDANCE'}">
+        <h3>Production</h3>
+        <table><thead><tr><th>Date</th><th>Part Number</th><th>Mark</th><th>Shift</th><th>Production Quantity</th></tr></thead>
+            <tbody><tr th:each="row : ${report.production}">
+                <td th:text="${row.date}"></td><td th:text="${row.partNumber}"></td><td th:text="${row.markName}"></td>
+                <td th:text="${row.shiftName}"></td><td th:text="${row.quantity}"></td>
+            </tr><tr th:if="${#lists.isEmpty(report.production)}"><td colspan="5">No production records matched the selected filters.</td></tr>
+            <tr><th colspan="4">Total production</th><th th:text="${report.productionTotal}"></th></tr></tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>
