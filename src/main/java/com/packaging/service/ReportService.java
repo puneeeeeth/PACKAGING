@@ -30,6 +30,11 @@ public class ReportService {
 
     public ReportData generate(String type, LocalDate fromDate, LocalDate toDate,
                                Long teamId, Long partId, Long markId, Long shiftId) {
+        return generate(type, fromDate, toDate, teamId, partId, markId, shiftId, null);
+    }
+
+    public ReportData generate(String type, LocalDate fromDate, LocalDate toDate,
+                               Long teamId, Long partId, Long markId, Long shiftId, String operatorName) {
         String reportType = type == null ? "ATTENDANCE" : type.toUpperCase();
         if (!List.of("ATTENDANCE", "PRODUCTION", "COMBINED").contains(reportType)) {
             throw new IllegalArgumentException("Choose a valid report type.");
@@ -38,7 +43,7 @@ public class ReportService {
         List<AttendanceRecord> attendance = "PRODUCTION".equals(reportType) ? List.of()
                 : attendanceRepository.records(null, fromDate, toDate, teamId, null, null);
         List<ProductionRecord> production = "ATTENDANCE".equals(reportType) ? List.of()
-                : productionRepository.records(null, fromDate, toDate, partId, markId, shiftId);
+                : productionRepository.records(null, fromDate, toDate, partId, markId, shiftId, operatorName);
         Map<LocalDate, AttendanceTotals> daily = new TreeMap<>();
         attendance.stream().collect(java.util.stream.Collectors.groupingBy(AttendanceRecord::date))
                 .forEach((date, rows) -> daily.put(date, attendanceService.totals(rows)));

@@ -16,9 +16,28 @@ import java.util.List;
 @Service
 public class AttendanceService {
     private final AttendanceRepository repository;
+    private final ReferenceService referenceService;
 
-    public AttendanceService(AttendanceRepository repository) {
+    public AttendanceService(AttendanceRepository repository, ReferenceService referenceService) {
         this.repository = repository;
+        this.referenceService = referenceService;
+    }
+
+    @Transactional
+    public void submit(LocalDate date, Long teamId, String employeeNumber, String employeeName, String status) {
+        if (date == null) {
+            throw new IllegalArgumentException("Attendance date is required.");
+        }
+        String normalizedStatus = status == null ? "" : status.trim().toUpperCase();
+        if (!"P".equals(normalizedStatus) && !"A".equals(normalizedStatus)) {
+            throw new IllegalArgumentException("Choose Present (P) or Absent (A).");
+        }
+        long employeeId = referenceService.registerAttendanceEmployee(employeeNumber, employeeName, teamId);
+        try {
+            repository.saveOrUpdate(employeeId, date, normalizedStatus);
+        } catch (DuplicateKeyException ex) {
+            throw new IllegalArgumentException("Attendance could not be saved because this employee already has a record for the selected date.");
+        }
     }
 
     public List<AttendanceEntryRow> entryRows(LocalDate date, Long teamId) {

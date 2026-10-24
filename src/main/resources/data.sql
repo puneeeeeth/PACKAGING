@@ -48,17 +48,24 @@ WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' 
 INSERT INTO parts (part_number, part_name, is_active)
 SELECT 'DEMO-PACK-02', 'Sample shipping box', TRUE
 WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
-INSERT INTO marks (mark_name, is_active)
-SELECT 'DEMO-MARK-A', TRUE
-WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
-INSERT INTO marks (mark_name, is_active)
-SELECT 'DEMO-MARK-B', TRUE
-WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
 INSERT INTO shifts (shift_name, is_active)
 SELECT 'Day Shift', TRUE
 WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
 INSERT INTO shifts (shift_name, is_active)
 SELECT 'Night Shift', TRUE
+WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
+
+INSERT INTO marks (mark_name, is_active)
+SELECT 'AA', TRUE
+WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
+INSERT INTO marks (mark_name, is_active)
+SELECT 'KIT', TRUE
+WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
+INSERT INTO marks (mark_name, is_active)
+SELECT 'Main', TRUE
+WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
+INSERT INTO marks (mark_name, is_active)
+SELECT 'Htz', TRUE
 WHERE EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
 
 INSERT INTO attendance (employee_id, attendance_date, status)
@@ -94,21 +101,40 @@ SELECT employee_id, CURRENT_DATE, 'A' FROM employees
 WHERE employee_number = 'DEMO-402' AND EXISTS
     (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
 
-INSERT INTO production_entries (production_date, part_id, mark_id, shift_id, production_quantity, remarks)
-SELECT CURRENT_DATE, p.part_id, m.mark_id, s.shift_id, 1200, 'DEMO SAMPLE - replace with actual production'
-FROM parts p, marks m, shifts s
-WHERE p.part_number = 'DEMO-PACK-01' AND m.mark_name = 'DEMO-MARK-A' AND s.shift_name = 'Day Shift'
+INSERT INTO production_entries (production_date, operator_name, part_id, mark_id, production_quantity, remarks)
+SELECT CURRENT_DATE, 'Sample Operator 01', p.part_id, m.mark_id, 1200, 'DEMO SAMPLE - replace with actual production'
+FROM parts p, marks m
+WHERE p.part_number = 'DEMO-PACK-01' AND m.mark_name = 'AA'
   AND EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
-INSERT INTO production_entries (production_date, part_id, mark_id, shift_id, production_quantity, remarks)
-SELECT CURRENT_DATE, p.part_id, m.mark_id, s.shift_id, 850, 'DEMO SAMPLE - replace with actual production'
-FROM parts p, marks m, shifts s
-WHERE p.part_number = 'DEMO-PACK-02' AND m.mark_name = 'DEMO-MARK-B' AND s.shift_name = 'Day Shift'
+INSERT INTO production_entries (production_date, operator_name, part_id, mark_id, production_quantity, remarks)
+SELECT CURRENT_DATE, 'Sample Operator 02', p.part_id, m.mark_id, 850, 'DEMO SAMPLE - replace with actual production'
+FROM parts p, marks m
+WHERE p.part_number = 'DEMO-PACK-02' AND m.mark_name = 'KIT'
   AND EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
-INSERT INTO production_entries (production_date, part_id, mark_id, shift_id, production_quantity, remarks)
-SELECT CURRENT_DATE, p.part_id, m.mark_id, s.shift_id, 460, 'DEMO SAMPLE - replace with actual production'
-FROM parts p, marks m, shifts s
-WHERE p.part_number = 'DEMO-PACK-01' AND m.mark_name = 'DEMO-MARK-B' AND s.shift_name = 'Night Shift'
+INSERT INTO production_entries (production_date, operator_name, part_id, mark_id, production_quantity, remarks)
+SELECT CURRENT_DATE, 'Sample Operator 03', p.part_id, m.mark_id, 460, 'DEMO SAMPLE - replace with actual production'
+FROM parts p, marks m
+WHERE p.part_number = 'DEMO-PACK-01' AND m.mark_name = 'Main'
   AND EXISTS (SELECT 1 FROM app_metadata WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING');
+
+UPDATE marks SET mark_name = 'AA'
+WHERE mark_name = 'DEMO-MARK-A' AND NOT EXISTS (SELECT 1 FROM marks WHERE mark_name = 'AA');
+UPDATE marks SET mark_name = 'KIT'
+WHERE mark_name = 'DEMO-MARK-B' AND NOT EXISTS (SELECT 1 FROM marks WHERE mark_name = 'KIT');
+INSERT INTO marks (mark_name, is_active)
+SELECT 'Main', TRUE
+WHERE EXISTS (SELECT 1 FROM parts WHERE part_number LIKE 'DEMO-%')
+  AND NOT EXISTS (SELECT 1 FROM marks WHERE mark_name = 'Main');
+INSERT INTO marks (mark_name, is_active)
+SELECT 'Htz', TRUE
+WHERE EXISTS (SELECT 1 FROM parts WHERE part_number LIKE 'DEMO-%')
+  AND NOT EXISTS (SELECT 1 FROM marks WHERE mark_name = 'Htz');
+UPDATE production_entries SET operator_name = 'Sample Operator 01'
+WHERE operator_name = 'Unassigned' AND remarks LIKE 'DEMO SAMPLE%'
+  AND part_id = (SELECT part_id FROM parts WHERE part_number = 'DEMO-PACK-01');
+UPDATE production_entries SET operator_name = 'Sample Operator 02'
+WHERE operator_name = 'Unassigned' AND remarks LIKE 'DEMO SAMPLE%'
+  AND part_id = (SELECT part_id FROM parts WHERE part_number = 'DEMO-PACK-02');
 
 UPDATE app_metadata SET metadata_value = 'DONE'
 WHERE metadata_key = 'demo-seed-state' AND metadata_value = 'PENDING';

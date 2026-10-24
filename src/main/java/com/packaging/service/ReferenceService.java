@@ -40,6 +40,29 @@ public class ReferenceService {
     }
 
     @Transactional
+    public long registerAttendanceEmployee(String employeeNumber, String name, Long teamId) {
+        String number = required(employeeNumber, "Employee number").toUpperCase();
+        String employeeName = required(name, "Employee name");
+        if (number.length() > 40 || employeeName.length() > 150) {
+            throw new IllegalArgumentException("Employee number or name exceeds the allowed length.");
+        }
+        if (teamId == null || repository.teams().stream().noneMatch(team -> team.id() == teamId)) {
+            throw new IllegalArgumentException("Select one of the configured teams.");
+        }
+        Employee existing = repository.employeeByNumber(number);
+        try {
+            long employeeId = repository.saveEmployee(existing == null ? null : existing.id(),
+                    number, employeeName, teamId);
+            if (existing != null && !existing.active()) {
+                repository.setEmployeeActive(employeeId, true);
+            }
+            return employeeId;
+        } catch (DuplicateKeyException ex) {
+            throw new IllegalArgumentException("That employee number is already configured.");
+        }
+    }
+
+    @Transactional
     public void saveEmployee(Long id, String employeeNumber, String name, Long teamId) {
         String number = required(employeeNumber, "Employee number").toUpperCase();
         String employeeName = required(name, "Employee name");

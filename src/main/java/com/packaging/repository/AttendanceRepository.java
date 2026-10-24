@@ -70,11 +70,15 @@ public class AttendanceRepository {
             sql.append(" AND e.team_id = :teamId");
             params.addValue("teamId", teamId);
         }
-        if (employeeNumber != null && !employeeNumber.isBlank()) {
-            sql.append(" AND LOWER(e.employee_number) LIKE :employeeNumber");
+        if (employeeNumber != null && !employeeNumber.isBlank()
+                && employeeName != null && !employeeName.isBlank()) {
+            sql.append(" AND LOWER(e.employee_number) LIKE :employeeNumber AND LOWER(e.employee_name) LIKE :employeeName");
             params.addValue("employeeNumber", "%" + employeeNumber.trim().toLowerCase() + "%");
-        }
-        if (employeeName != null && !employeeName.isBlank()) {
+            params.addValue("employeeName", "%" + employeeName.trim().toLowerCase() + "%");
+        } else if (employeeNumber != null && !employeeNumber.isBlank()) {
+            sql.append(" AND (LOWER(e.employee_number) LIKE :employeeSearch OR LOWER(e.employee_name) LIKE :employeeSearch)");
+            params.addValue("employeeSearch", "%" + employeeNumber.trim().toLowerCase() + "%");
+        } else if (employeeName != null && !employeeName.isBlank()) {
             sql.append(" AND LOWER(e.employee_name) LIKE :employeeName");
             params.addValue("employeeName", "%" + employeeName.trim().toLowerCase() + "%");
         }
@@ -98,6 +102,12 @@ public class AttendanceRepository {
                         "WHERE employee_id = :employeeId AND attendance_date = :date",
                 new MapSqlParameterSource().addValue("employeeId", employeeId)
                         .addValue("date", date).addValue("status", status));
+    }
+
+    public void saveOrUpdate(long employeeId, LocalDate date, String status) {
+        if (update(employeeId, date, status) == 0) {
+            insert(employeeId, date, status);
+        }
     }
 
     public boolean employeeExists(long employeeId) {

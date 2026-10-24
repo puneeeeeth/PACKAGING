@@ -27,6 +27,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -114,6 +115,22 @@ class PackagingApplicationTests {
     }
 
     @Test
+    void attendanceFormSubmissionRegistersEmployeeAndUpdatesSameDate() {
+        long teamId = referenceService.teams().get(0).id();
+        LocalDate date = LocalDate.of(2026, 3, 11);
+
+        attendanceService.submit(date, teamId, "E-900", "Factory Operator", "P");
+        attendanceService.submit(date, teamId, "E-900", "Factory Operator", "A");
+
+        List<AttendanceRecord> rows = attendanceService.records(date, null, null, teamId, "E-900", null);
+        assertEquals(1, rows.size());
+        assertEquals("A", rows.get(0).status());
+        assertEquals("Factory Operator", rows.get(0).employeeName());
+        assertThrows(IllegalArgumentException.class,
+                () -> attendanceService.submit(date, teamId, "E-900", "Factory Operator", "X"));
+    }
+
+    @Test
     void teamNamesCanBeConfiguredWithoutChangingTeamCount() {
         Team team = referenceService.teams().get(3);
         referenceService.renameTeam(team.id(), "Packing Team");
@@ -187,7 +204,7 @@ class PackagingApplicationTests {
                         .param("markId", Long.toString(mark.id()))
                         .param("shiftId", Long.toString(shift.id())))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(content().contentTypeCompatibleWith("application/vnd.ms-excel"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("R-BOX")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("17")));
 
@@ -195,6 +212,76 @@ class PackagingApplicationTests {
                         .param("fromDate", date.toString()).param("toDate", date.toString()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Production Report")));
+    }
+
+    @Test
+    void productionOperatorMarketSummaryAndExcelExportsUseSavedRecords() throws Exception {
+        long teamId = referenceService.teams().get(0).id();
+        LocalDate date = LocalDate.of(2026, 3, 12);
+        attendanceService.submit(date, teamId, "E-901", "Present Operator", "P");
+        attendanceService.submit(date, teamId, "E-902", "Absent Operator", "A");
+        referenceService.addPart("P-901", "Carton");
+        referenceService.addMark("AA");
+        LookupOption part = referenceService.parts(false).get(0);
+        LookupOption market = referenceService.marks(false).get(0);
+
+        productionService.save(null, date, "Line Operator", part.id(), market.id(), null, 250, "Morning run");
+        var summary = summaryService.calculate(date, null, null, teamId, null, null, null);
+        assertEquals(2, summary.attendance().manpower());
+        assertEquals(1, summary.attendance().present());
+        assertEquals(1, summary.attendance().absent());
+        assertEquals(250, summary.production().total());
+        assertEquals(250.0, summary.productivity());
+        assertEquals("Line Operator", productionService.records(date, null, null,
+                part.id(), market.id(), null).get(0).operatorName());
+
+        mvc.perform(get("/summary/export/excel").param("selectedDate", date.toString()).param("teamId", Long.toString(teamId)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/vnd.ms-excel"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Market-wise Production")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("250")));
+        mvc.perform(get("/report/export/excel").param("fromDate", date.toString()).param("toDate", date.toString())
+                        .param("operatorName", "Line Operator"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/vnd.ms-excel"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Line Operator")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("P-901")));
+    }
+
+    @Test
+    void attendanceAndProductionFormsCompleteTheRequestedWorkflow() throws Exception {
+        long teamId = referenceService.teams().get(0).id();
+        LocalDate date = LocalDate.of(2026, 3, 13);
+        mvc.perform(post("/attendance/save").param("date", date.toString())
+                        .param("teamId", Long.toString(teamId)).param("employeeNumber", "FORM-100")
+                        .param("employeeName", "Form Operator").param("status", "P"))
+                .andExpect(status().is3xxRedirection());
+        assertEquals(1, attendanceService.records(date, null, null, teamId, "FORM-100", null).size());
+        mvc.perform(get("/attendance").param("recordDate", date.toString()).param("employeeSearch", "FORM-100"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("FORM-100")));
+        mvc.perform(get("/attendance").param("recordDate", date.toString()).param("employeeSearch", "Form Operator"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("FORM-100")));
+
+        referenceService.addPart("FORM-PART", "Form Test Part");
+        referenceService.addMark("Htz");
+        LookupOption part = referenceService.parts(false).get(0);
+        LookupOption market = referenceService.marks(false).get(0);
+        mvc.perform(post("/production/save").param("date", date.toString())
+                        .param("operatorName", "Form Operator").param("partId", Long.toString(part.id()))
+                        .param("markId", Long.toString(market.id())).param("quantity", "88"))
+                .andExpect(status().is3xxRedirection());
+
+        mvc.perform(get("/summary").param("selectedDate", date.toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Grand Total Production")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("88")));
+        mvc.perform(get("/report").param("fromDate", date.toString()).param("toDate", date.toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Form Operator")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("FORM-PART")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("88")));
     }
 
     @Test

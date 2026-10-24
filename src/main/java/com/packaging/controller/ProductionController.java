@@ -31,12 +31,13 @@ public class ProductionController {
                              @RequestParam(required = false) Long partId,
                              @RequestParam(required = false) Long markId,
                              @RequestParam(required = false) Long shiftId,
+                             @RequestParam(required = false) String operatorName,
                              @RequestParam(required = false) Long editId,
                              Model model) {
         List<ProductionRecord> rows = List.of();
         String error = null;
         try {
-            rows = productionService.records(productionDate, fromDate, toDate, partId, markId, shiftId);
+            rows = productionService.records(productionDate, fromDate, toDate, partId, markId, shiftId, operatorName);
         } catch (IllegalArgumentException ex) {
             error = ex.getMessage();
         }
@@ -49,11 +50,13 @@ public class ProductionController {
         model.addAttribute("partIdFilter", partId);
         model.addAttribute("markIdFilter", markId);
         model.addAttribute("shiftIdFilter", shiftId);
+        model.addAttribute("operatorNameFilter", operatorName);
         model.addAttribute("productionRecords", rows);
         model.addAttribute("productionTotal", rows.stream().mapToLong(ProductionRecord::quantity).sum());
         model.addAttribute("editRecord", editRecord);
         model.addAttribute("parts", referenceService.parts(true));
         model.addAttribute("marks", referenceService.marks(true));
+        model.addAttribute("operators", referenceService.employees(null, true));
         model.addAttribute("shifts", referenceService.shifts(true));
         if (error != null) {
             model.addAttribute("error", error);
@@ -64,6 +67,7 @@ public class ProductionController {
     @PostMapping("/production/save")
     public String save(@RequestParam(required = false) Long id,
                        @RequestParam(required = false) LocalDate date,
+                       @RequestParam(required = false) String operatorName,
                        @RequestParam(required = false) Long partId,
                        @RequestParam(required = false) Long markId,
                        @RequestParam(required = false) Long shiftId,
@@ -77,7 +81,7 @@ public class ProductionController {
             } catch (NumberFormatException ex) {
                 throw new IllegalArgumentException("Production quantity must be a non-negative whole number.");
             }
-            productionService.save(id, date, partId, markId, shiftId, parsedQuantity, remarks);
+            productionService.save(id, date, operatorName, partId, markId, shiftId, parsedQuantity, remarks);
             redirect.addFlashAttribute("success", id == null ? "Production entry saved." : "Production entry updated.");
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());

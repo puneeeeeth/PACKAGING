@@ -7,7 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-<header class="page-header"><a class="home-link" th:href="@{/}">Home</a><h1>Production Entry</h1></header>
+<header class="page-header"><img class="bosch-logo" th:src="@{/images/bosch-logo.png}" alt="Bosch"><a class="home-link" th:href="@{/}">Home</a><h1>Production Entry</h1></header>
 <main class="page-shell">
     <p class="message success" th:if="${success}" th:text="${success}"></p>
     <p class="message error" th:if="${error}" th:text="${error}"></p>
@@ -16,164 +16,87 @@
         <h2 th:text="${editRecord != null ? 'Edit Production Entry' : 'New Production Entry'}"></h2>
         <form class="form-grid" method="post" th:action="@{/production/save}">
             <input type="hidden" name="id" th:if="${editRecord != null}" th:value="${editRecord.id}">
-            <label>Production date
-                <input type="date" name="date" required th:value="${editRecord != null ? editRecord.date : productionDate}">
+            <label>Production date<input type="date" name="date" required th:value="${editRecord != null ? editRecord.date : productionDate}"></label>
+            <label>Operator name
+                <input name="operatorName" maxlength="150" list="operator-options" autocomplete="off" required
+                       th:value="${editRecord != null ? editRecord.operatorName : ''}">
+                <datalist id="operator-options"><option th:each="operator : ${operators}" th:value="${operator.name}"></option></datalist>
             </label>
-            <label>Part number
-                <select name="partId" required>
-                    <option value="">Select part number</option>
-                    <option th:each="part : ${parts}" th:value="${part.id}"
-                            th:selected="${editRecord != null and part.id == editRecord.partId}"
-                            th:text="${(part.name != null and !part.name.isBlank() ? part.code + ' — ' + part.name : part.code) + (part.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <label>Mark
-                <select name="markId" required>
-                    <option value="">Select mark</option>
-                    <option th:each="mark : ${marks}" th:value="${mark.id}"
-                            th:selected="${editRecord != null and mark.id == editRecord.markId}"
-                            th:text="${mark.code + (mark.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <label>Shift
-                <select name="shiftId" required>
-                    <option value="">Select shift</option>
-                    <option th:each="shift : ${shifts}" th:value="${shift.id}"
-                            th:selected="${editRecord != null and shift.id == editRecord.shiftId}"
-                            th:text="${shift.code + (shift.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <label>Production quantity
-                <input type="number" name="quantity" min="0" step="1" required
-                       th:value="${editRecord != null ? editRecord.quantity : ''}">
-            </label>
-            <label class="wide-field">Remarks
-                <input name="remarks" maxlength="1000" th:value="${editRecord != null ? editRecord.remarks : ''}">
-            </label>
-            <div class="actions align-end">
-                <button type="submit" th:text="${editRecord != null ? 'Update Entry' : 'Save Entry'}"></button>
-                <a class="button-link secondary-button" th:href="@{/production}">Reset</a>
-            </div>
+            <label>Part number<select name="partId" required><option value="">Select part number</option>
+                <option th:each="part : ${parts}" th:value="${part.id}"
+                        th:selected="${editRecord != null and part.id == editRecord.partId}"
+                        th:text="${(part.name != null and !part.name.isBlank() ? part.code + ' - ' + part.name : part.code) + (part.active ? '' : ' (Inactive)')}"></option>
+            </select></label>
+            <label>Market<select name="markId" required><option value="">Select market</option>
+                <option th:each="market : ${marks}" th:value="${market.id}"
+                        th:selected="${editRecord != null and market.id == editRecord.markId}"
+                        th:text="${market.code + (market.active ? '' : ' (Inactive)')}"></option>
+            </select></label>
+            <label>Quantity<input type="number" name="quantity" min="0" step="1" required
+                                  th:value="${editRecord != null ? editRecord.quantity : ''}"></label>
+            <label>Remarks (optional)<input name="remarks" maxlength="1000" th:value="${editRecord != null ? editRecord.remarks : ''}"></label>
+            <div class="actions align-end"><button type="submit" th:text="${editRecord != null ? 'Update Entry' : 'Submit Production'}"></button>
+                <a class="button-link secondary-button" th:href="@{/production}">Reset</a></div>
         </form>
     </section>
 
     <section class="panel">
-        <h2>View Production Records</h2>
+        <h2>Production Records</h2>
         <form class="filter-form" method="get" th:action="@{/production}">
-            <label>Single date
-                <input type="date" name="productionDate" th:value="${filterDate}">
-            </label>
-            <label>From date
-                <input type="date" name="fromDate" th:value="${fromDate}">
-            </label>
-            <label>To date
-                <input type="date" name="toDate" th:value="${toDate}">
-            </label>
-            <label>Part number
-                <select name="partId"><option value="">All parts</option>
-                    <option th:each="part : ${parts}" th:value="${part.id}"
-                            th:selected="${partIdFilter != null and part.id == partIdFilter}"
-                            th:text="${part.code + (part.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <label>Mark
-                <select name="markId"><option value="">All marks</option>
-                    <option th:each="mark : ${marks}" th:value="${mark.id}"
-                            th:selected="${markIdFilter != null and mark.id == markIdFilter}"
-                            th:text="${mark.code + (mark.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <label>Shift
-                <select name="shiftId"><option value="">All shifts</option>
-                    <option th:each="shift : ${shifts}" th:value="${shift.id}"
-                            th:selected="${shiftIdFilter != null and shift.id == shiftIdFilter}"
-                            th:text="${shift.code + (shift.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <button type="submit">View Records</button>
+            <label>Date<input type="date" name="productionDate" th:value="${filterDate}"></label>
+            <label>From date<input type="date" name="fromDate" th:value="${fromDate}"></label>
+            <label>To date<input type="date" name="toDate" th:value="${toDate}"></label>
+            <label>Operator<input type="search" name="operatorName" th:value="${operatorNameFilter}"></label>
+            <label>Part number<select name="partId"><option value="">All parts</option>
+                <option th:each="part : ${parts}" th:value="${part.id}" th:selected="${partIdFilter != null and part.id == partIdFilter}" th:text="${part.code}"></option>
+            </select></label>
+            <label>Market<select name="markId"><option value="">All markets</option>
+                <option th:each="market : ${marks}" th:value="${market.id}" th:selected="${markIdFilter != null and market.id == markIdFilter}" th:text="${market.code}"></option>
+            </select></label>
+            <button type="submit">Sum / View Total</button>
             <a class="button-link secondary-button" th:href="@{/production}">Clear Filters</a>
         </form>
-        <p class="help-text">A single date takes priority over the date range.</p>
-        <p class="summary-line"><strong>Total production: <span th:text="${productionTotal}"></span></strong></p>
-        <div class="table-scroll">
-            <table>
-                <thead><tr><th>Date</th><th>Part Number</th><th>Mark</th><th>Shift</th><th>Quantity</th><th>Remarks</th><th>Actions</th></tr></thead>
-                <tbody>
-                <tr th:each="row : ${productionRecords}">
-                    <td th:text="${row.date}"></td><td th:text="${row.partNumber}"></td><td th:text="${row.markName}"></td>
-                    <td th:text="${row.shiftName}"></td><td th:text="${row.quantity}"></td><td th:text="${row.remarks}"></td>
-                    <td class="actions-cell">
-                        <a th:href="@{/production(editId=${row.id})}">Edit</a>
-                        <form method="post" th:action="@{/production/{id}/delete(id=${row.id})}"
-                              onsubmit="return confirm('Delete this production entry?')">
-                            <button type="submit" class="text-button">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(productionRecords)}"><td colspan="7">No production records match these filters.</td></tr>
-                </tbody>
-            </table>
-        </div>
+        <div class="summary-line"><strong>Sum for matching records: <span th:text="${productionTotal}"></span></strong></div>
+        <div class="table-scroll"><table><thead><tr><th>Date</th><th>Operator</th><th>Part Number</th><th>Market</th><th>Quantity</th><th>Remarks</th><th>Actions</th></tr></thead>
+            <tbody>
+            <tr th:each="row : ${productionRecords}"><td th:text="${row.date}"></td><td th:text="${row.operatorName}"></td>
+                <td th:text="${row.partNumber}"></td><td th:text="${row.markName}"></td><td th:text="${row.quantity}"></td><td th:text="${row.remarks}"></td>
+                <td class="actions-cell"><a th:href="@{/production(editId=${row.id})}">Edit</a>
+                    <form method="post" th:action="@{/production/{id}/delete(id=${row.id})}" onsubmit="return confirm('Delete this production entry?')">
+                        <button type="submit" class="text-button">Delete</button>
+                    </form>
+                </td></tr>
+            <tr th:if="${#lists.isEmpty(productionRecords)}"><td colspan="7">No production records match these filters.</td></tr>
+            </tbody></table></div>
     </section>
 
-    <section class="panel" id="configuration">
-        <h2>Part, Mark, and Shift Setup</h2>
-        <p class="help-text">Add only the part numbers, marks, and shifts used by your factory. Inactive options remain visible in historical records.</p>
+    <details class="panel" id="configuration">
+        <summary><strong>Part and Market Setup</strong></summary>
+        <p class="help-text">Add the part numbers and markets used in the factory. AA, KIT, Main, and Htz are included as market options.</p>
         <div class="config-grid">
             <form class="form-grid compact-form" method="post" th:action="@{/production/config/part}">
-                <h3>Parts</h3>
-                <label>Part number<input name="partNumber" maxlength="80" required></label>
-                <label>Part name (optional)<input name="partName" maxlength="150"></label>
-                <button type="submit">Add Part</button>
+                <h3>Parts</h3><label>Part number<input name="partNumber" maxlength="80" required></label>
+                <label>Part name (optional)<input name="partName" maxlength="150"></label><button type="submit">Add Part</button>
             </form>
             <form class="form-grid compact-form" method="post" th:action="@{/production/config/mark}">
-                <h3>Marks</h3>
-                <label>Mark<input name="markName" maxlength="80" required></label>
-                <button type="submit">Add Mark</button>
-            </form>
-            <form class="form-grid compact-form" method="post" th:action="@{/production/config/shift}">
-                <h3>Shifts</h3>
-                <label>Shift name<input name="shiftName" maxlength="80" required></label>
-                <button type="submit">Add Shift</button>
+                <h3>Markets</h3><label>Market name<input name="markName" maxlength="80" required></label><button type="submit">Add Market</button>
             </form>
         </div>
         <div class="config-grid">
-            <div>
-                <h3>Configured parts</h3>
-                <table><thead><tr><th>Part number</th><th>Part name</th><th>Status</th><th></th></tr></thead>
-                    <tbody><tr th:each="part : ${parts}"><td th:text="${part.code}"></td><td th:text="${part.name}"></td>
-                        <td th:text="${part.active ? 'Active' : 'Inactive'}"></td><td>
-                            <form method="post" th:action="@{/production/config/part/{id}/active(id=${part.id})}">
-                                <input type="hidden" name="active" th:value="${!part.active}">
-                                <button type="submit" class="text-button" th:text="${part.active ? 'Deactivate' : 'Activate'}"></button>
-                            </form>
-                        </td></tr><tr th:if="${#lists.isEmpty(parts)}"><td colspan="4">No parts configured.</td></tr></tbody>
-                </table>
-            </div>
-            <div>
-                <h3>Configured marks</h3>
-                <table><thead><tr><th>Mark</th><th>Status</th><th></th></tr></thead>
-                    <tbody><tr th:each="mark : ${marks}"><td th:text="${mark.code}"></td><td th:text="${mark.active ? 'Active' : 'Inactive'}"></td><td>
-                        <form method="post" th:action="@{/production/config/mark/{id}/active(id=${mark.id})}">
-                            <input type="hidden" name="active" th:value="${!mark.active}">
-                            <button type="submit" class="text-button" th:text="${mark.active ? 'Deactivate' : 'Activate'}"></button>
-                        </form>
-                    </td></tr><tr th:if="${#lists.isEmpty(marks)}"><td colspan="3">No marks configured.</td></tr></tbody>
-                </table>
-            </div>
-            <div>
-                <h3>Configured shifts</h3>
-                <table><thead><tr><th>Shift</th><th>Status</th><th></th></tr></thead>
-                    <tbody><tr th:each="shift : ${shifts}"><td th:text="${shift.code}"></td><td th:text="${shift.active ? 'Active' : 'Inactive'}"></td><td>
-                        <form method="post" th:action="@{/production/config/shift/{id}/active(id=${shift.id})}">
-                            <input type="hidden" name="active" th:value="${!shift.active}">
-                            <button type="submit" class="text-button" th:text="${shift.active ? 'Deactivate' : 'Activate'}"></button>
-                        </form>
-                    </td></tr><tr th:if="${#lists.isEmpty(shifts)}"><td colspan="3">No shifts configured.</td></tr></tbody>
-                </table>
-            </div>
+            <div><h3>Configured parts</h3><table><thead><tr><th>Part number</th><th>Part name</th><th>Status</th><th></th></tr></thead>
+                <tbody><tr th:each="part : ${parts}"><td th:text="${part.code}"></td><td th:text="${part.name}"></td><td th:text="${part.active ? 'Active' : 'Inactive'}"></td><td>
+                    <form method="post" th:action="@{/production/config/part/{id}/active(id=${part.id})}"><input type="hidden" name="active" th:value="${!part.active}">
+                        <button type="submit" class="text-button" th:text="${part.active ? 'Deactivate' : 'Activate'}"></button></form>
+                </td></tr><tr th:if="${#lists.isEmpty(parts)}"><td colspan="4">No parts configured.</td></tr></tbody>
+            </table></div>
+            <div><h3>Configured markets</h3><table><thead><tr><th>Market</th><th>Status</th><th></th></tr></thead>
+                <tbody><tr th:each="market : ${marks}"><td th:text="${market.code}"></td><td th:text="${market.active ? 'Active' : 'Inactive'}"></td><td>
+                    <form method="post" th:action="@{/production/config/mark/{id}/active(id=${market.id})}"><input type="hidden" name="active" th:value="${!market.active}">
+                        <button type="submit" class="text-button" th:text="${market.active ? 'Deactivate' : 'Activate'}"></button></form>
+                </td></tr><tr th:if="${#lists.isEmpty(marks)}"><td colspan="3">No markets configured.</td></tr></tbody>
+            </table></div>
         </div>
-    </section>
+    </details>
 </main>
 </body>
 </html>

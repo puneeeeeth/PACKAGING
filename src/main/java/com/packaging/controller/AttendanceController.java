@@ -30,24 +30,25 @@ public class AttendanceController {
                              @RequestParam(required = false) Long entryTeamId,
                              @RequestParam(required = false) LocalDate recordDate,
                              @RequestParam(required = false) Long recordTeamId,
-                             @RequestParam(required = false) String employeeNumber,
-                             @RequestParam(required = false) String employeeName,
+                             @RequestParam(required = false) String employeeSearch,
                              @RequestParam(required = false) Long editEmployeeId,
                              Model model) {
         LocalDate selectedEntryDate = entryDate == null ? LocalDate.now() : entryDate;
         LocalDate selectedRecordDate = recordDate == null ? selectedEntryDate : recordDate;
+        var teams = referenceService.teams();
+        if (entryTeamId == null && !teams.isEmpty()) {
+            entryTeamId = teams.get(0).id();
+        }
         List<AttendanceRecord> rows = attendanceService.records(selectedRecordDate, null, null,
-                recordTeamId, employeeNumber, employeeName);
+                recordTeamId, employeeSearch, null);
         model.addAttribute("entryDate", selectedEntryDate);
         model.addAttribute("entryTeamId", entryTeamId);
-        model.addAttribute("entryRows", attendanceService.entryRows(selectedEntryDate, entryTeamId));
         model.addAttribute("recordDate", selectedRecordDate);
         model.addAttribute("recordTeamId", recordTeamId);
-        model.addAttribute("employeeNumberFilter", employeeNumber);
-        model.addAttribute("employeeNameFilter", employeeName);
+        model.addAttribute("employeeSearchFilter", employeeSearch);
         model.addAttribute("attendanceRecords", rows);
         model.addAttribute("attendanceTotals", attendanceService.totals(rows));
-        model.addAttribute("teams", referenceService.teams());
+        model.addAttribute("teams", teams);
         model.addAttribute("employees", referenceService.employees(null, false));
         Employee editEmployee = editEmployeeId == null ? null : referenceService.employees(null, false).stream()
                 .filter(employee -> employee.id() == editEmployeeId).findFirst().orElse(null);
@@ -58,12 +59,13 @@ public class AttendanceController {
     @PostMapping("/attendance/save")
     public String saveAttendance(@RequestParam(required = false) LocalDate date,
                                  @RequestParam(required = false) Long teamId,
-                                 @RequestParam(required = false) List<Long> employeeIds,
-                                 @RequestParam(required = false) List<String> statuses,
+                                 @RequestParam(required = false) String employeeNumber,
+                                 @RequestParam(required = false) String employeeName,
+                                 @RequestParam(required = false) String status,
                                  RedirectAttributes redirect) {
         try {
-            int count = attendanceService.save(date, teamId, employeeIds, statuses);
-            redirect.addFlashAttribute("success", count + " attendance record(s) saved.");
+            attendanceService.submit(date, teamId, employeeNumber, employeeName, status);
+            redirect.addFlashAttribute("success", "Attendance submitted.");
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }

@@ -21,7 +21,7 @@ src/main/java/com/packaging/
   service/          Validation and business calculations
 src/main/resources/
   schema.sql        Persistent H2 schema and indexes
-  data.sql          Four teams and labeled starter data on an empty database
+  data.sql          Four teams, sample operators, sample attendance/production, markets
   templates/        Thymeleaf screens
   static/css/       Plain shared styling
 src/test/java/      Business and web integration tests
@@ -44,12 +44,12 @@ Then open `http://localhost:8080`. In IntelliJ, open the project folder or `pom.
 
 ## Modules and behavior
 
-- **Attendance** — rename the four teams and configure their employees; mark P (present) or A (absent); update saved records; filter attendance by date, team, employee number, and name. New entries default to active employees. Historical attendance remains visible when an employee is deactivated.
-- **Production Entry** — configure part numbers, marks, and shifts, then save, edit, delete, and filter production records. Quantity is a non-negative integer. Deletion asks for confirmation.
-- **Summary** — calculates attendance and production from saved records using the selected date or date range. Availability is shown as unconfigured because the sketch does not establish its business formula.
-- **Report** — generates attendance, production, or combined reports from the same filtered database records. Excel export downloads UTF-8 CSV that opens in Excel. PDF export opens a print view; choose “Save as PDF” in the browser print dialog.
+- **Attendance** — select a team and date, enter the employee number and name, choose P (Present) or A (Absent), and submit. Employee details are added or updated automatically. Submitting the same employee/date updates that single attendance record. Team and employee setup remains available in the expandable configuration section.
+- **Production Entry** — select or type an operator, select a configured part and market, enter a non-negative whole-number quantity, and submit. AA, KIT, Main, and Htz are configured as starter market options. Saved rows can be edited or deleted after confirmation; Sum/View Total recalculates the matching total.
+- **Summary** — calculates manpower, present/absent counts, attendance percentage, market-wise production, and grand total from saved records for the selected date. For this workflow, manpower availability means employees marked Present; productivity is total production divided by present employees, or 0 when no employees are present.
+- **Report** — loads the full saved production list by default and filters by date range, operator, part, and market. The report columns are Name, Part Number, Market, and Quantity. Excel exports from Summary and Report are Excel-readable SpreadsheetML `.xls` workbooks containing the same filtered data. Print Report opens a print view; choose “Save as PDF” in the browser print dialog.
 
-The sketch supports the four module labels, team attendance with P/A statuses, and production fields for part number, mark, shift, and quantity. Handwritten employee names are not clear enough to use as defaults; demo employees are labeled as fictional samples. No machine field is required. Availability remains uncalculated until its definition is confirmed.
+The handwritten names are not used. Starter employee and production records are explicitly labeled as fictional demo values; replace them with actual factory data before operational use. The market label is represented internally by the existing mark lookup table to avoid a destructive database migration. Production shift remains optional for historical compatibility and is not required in the current workflow. No machine field is used.
 
 ## Troubleshooting
 

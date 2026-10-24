@@ -20,14 +20,19 @@ public class ProductionRepository {
 
     public List<ProductionRecord> records(LocalDate date, LocalDate fromDate, LocalDate toDate,
                                           Long partId, Long markId, Long shiftId) {
+        return records(date, fromDate, toDate, partId, markId, shiftId, null);
+    }
+
+    public List<ProductionRecord> records(LocalDate date, LocalDate fromDate, LocalDate toDate,
+                                          Long partId, Long markId, Long shiftId, String operatorName) {
         StringBuilder sql = new StringBuilder("""
-                SELECT p.production_id, p.production_date, p.part_id, part.part_number,
+                SELECT p.production_id, p.production_date, p.operator_name, p.part_id, part.part_number,
                        p.mark_id, mark.mark_name, p.shift_id, shift.shift_name,
                        p.production_quantity, p.remarks, p.created_at, p.updated_at
                 FROM production_entries p
                 JOIN parts part ON part.part_id = p.part_id
                 JOIN marks mark ON mark.mark_id = p.mark_id
-                JOIN shifts shift ON shift.shift_id = p.shift_id
+                LEFT JOIN shifts shift ON shift.shift_id = p.shift_id
                 WHERE 1 = 1
                 """);
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -56,27 +61,33 @@ public class ProductionRepository {
             sql.append(" AND p.shift_id = :shiftId");
             params.addValue("shiftId", shiftId);
         }
+        if (operatorName != null && !operatorName.isBlank()) {
+            sql.append(" AND LOWER(p.operator_name) LIKE :operatorName");
+            params.addValue("operatorName", "%" + operatorName.trim().toLowerCase() + "%");
+        }
         sql.append(" ORDER BY p.production_date DESC, p.production_id DESC");
         return jdbc.query(sql.toString(), params, (rs, row) -> new ProductionRecord(
                 rs.getLong("production_id"), rs.getDate("production_date").toLocalDate(),
                 rs.getLong("part_id"), rs.getString("part_number"),
                 rs.getLong("mark_id"), rs.getString("mark_name"),
-                rs.getLong("shift_id"), rs.getString("shift_name"),
+                rs.getObject("shift_id", Long.class), rs.getString("shift_name"),
+                rs.getString("operator_name"),
                 rs.getInt("production_quantity"), rs.getString("remarks"),
                 rs.getTimestamp("created_at").toLocalDateTime(),
                 rs.getTimestamp("updated_at").toLocalDateTime()));
     }
 
-    public long save(Long id, LocalDate date, long partId, long markId, long shiftId,
+    public long save(Long id, LocalDate date, String operatorName, long partId, long markId, Long shiftId,
                      int quantity, String remarks) {
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("date", date).addValue("partId", partId).addValue("markId", markId)
+                .addValue("date", date).addValue("operatorName", operatorName)
+                .addValue("partId", partId).addValue("markId", markId)
                 .addValue("shiftId", shiftId).addValue("quantity", quantity).addValue("remarks", remarks);
         if (id == null) {
             KeyHolder keys = new GeneratedKeyHolder();
             jdbc.update("INSERT INTO production_entries " +
-                            "(production_date, part_id, mark_id, shift_id, production_quantity, remarks) " +
-                            "VALUES (:date, :partId, :markId, :shiftId, :quantity, :remarks)", params, keys,
+                            "(production_date, operator_name, part_id, mark_id, shift_id, production_quantity, remarks) " +
+                            "VALUES (:date, :operatorName, :partId, :markId, :shiftId, :quantity, :remarks)", params, keys,
                     new String[]{"production_id"});
             Number generatedId = keys.getKey();
             if (generatedId == null) {
@@ -85,7 +96,7 @@ public class ProductionRepository {
             return generatedId.longValue();
         }
         params.addValue("id", id);
-        int updated = jdbc.update("UPDATE production_entries SET production_date = :date, part_id = :partId, " +
+        int updated = jdbc.update("UPDATE production_entries SET production_date = :date, operator_name = :operatorName, part_id = :partId, " +
                 "mark_id = :markId, shift_id = :shiftId, production_quantity = :quantity, remarks = :remarks, " +
                 "updated_at = CURRENT_TIMESTAMP WHERE production_id = :id", params);
         if (updated == 0) {

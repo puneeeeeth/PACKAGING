@@ -7,87 +7,43 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-<header class="page-header">
-    <a class="home-link" th:href="@{/}">Home</a>
-    <h1>Attendance</h1>
-</header>
+<header class="page-header"><img class="bosch-logo" th:src="@{/images/bosch-logo.png}" alt="Bosch"><a class="home-link" th:href="@{/}">Home</a><h1>Attendance</h1></header>
 <main class="page-shell">
     <p class="message success" th:if="${success}" th:text="${success}"></p>
     <p class="message error" th:if="${error}" th:text="${error}"></p>
 
     <section class="panel">
         <h2>Attendance Entry</h2>
-        <form class="filter-form entry-filters" method="get" th:action="@{/attendance}">
-            <label>Attendance date
-                <input type="date" name="entryDate" th:value="${entryDate}" required onchange="this.form.submit()">
-            </label>
+        <p class="help-text">Submit one employee at a time. Submitting the same employee and date updates the existing record.</p>
+        <form class="form-grid" method="post" th:action="@{/attendance/save}">
+            <label>Attendance date<input type="date" name="date" th:value="${entryDate}" required></label>
             <label>Team
-                <select name="entryTeamId" onchange="this.form.submit()">
-                    <option value="">All teams</option>
+                <select name="teamId" required>
+                    <option value="">Select team</option>
                     <option th:each="team : ${teams}" th:value="${team.id}"
-                            th:selected="${entryTeamId != null and team.id == entryTeamId}"
-                            th:text="${team.name}"></option>
+                            th:selected="${entryTeamId != null and team.id == entryTeamId}" th:text="${team.name}"></option>
                 </select>
             </label>
-        </form>
-        <p class="help-text">The employee list refreshes when the date or team changes. Sample rows are marked DEMO; replace them with your actual roster.</p>
-        <form method="post" th:action="@{/attendance/save}">
-            <input type="hidden" name="date" th:value="${entryDate}">
-            <input type="hidden" name="teamId" th:if="${entryTeamId != null}" th:value="${entryTeamId}">
-            <div class="table-scroll">
-                <table>
-                    <thead>
-                    <tr><th>Team</th><th>Employee Number</th><th>Employee Name</th><th>Attendance</th><th>Employee Status</th></tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="row : ${entryRows}">
-                        <td th:text="${row.teamName}"></td>
-                        <td>
-                            <input type="hidden" name="employeeIds" th:value="${row.employeeId}">
-                            <span th:text="${row.employeeNumber}"></span>
-                        </td>
-                        <td th:text="${row.employeeName}"></td>
-                        <td>
-                            <select name="statuses" aria-label="Attendance status">
-                                <option value="">Not recorded</option>
-                                <option value="P" th:selected="${row.status == 'P'}">P — Present</option>
-                                <option value="A" th:selected="${row.status == 'A'}">A — Absent</option>
-                            </select>
-                        </td>
-                        <td th:text="${row.active ? 'Active' : 'Inactive'}"></td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(entryRows)}"><td colspan="5">No employees are configured for this team.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="actions">
-                <button type="submit">Save Attendance</button>
-                <button type="submit" th:formaction="@{/attendance/update}">Update Attendance</button>
-                <button type="reset" class="secondary-button">Reset</button>
-            </div>
+            <label>Employee Number (E.No)<input name="employeeNumber" maxlength="40" autocomplete="off" required></label>
+            <label>Employee Name<input name="employeeName" maxlength="150" autocomplete="off" required></label>
+            <label>Attendance status
+                <select name="status" required>
+                    <option value="">Select status</option><option value="P">P - Present</option><option value="A">A - Absent</option>
+                </select>
+            </label>
+            <div class="actions align-end"><button type="submit">Submit Attendance</button><button type="reset" class="secondary-button">Reset</button></div>
         </form>
     </section>
 
     <section class="panel">
         <h2>View Attendance Records</h2>
         <form class="filter-form" method="get" th:action="@{/attendance}">
-            <label>Date
-                <input type="date" name="recordDate" th:value="${recordDate}">
-            </label>
-            <label>Team
-                <select name="recordTeamId">
-                    <option value="">All teams</option>
-                    <option th:each="team : ${teams}" th:value="${team.id}"
-                            th:selected="${recordTeamId != null and team.id == recordTeamId}"
-                            th:text="${team.name}"></option>
-                </select>
-            </label>
-            <label>Employee number
-                <input type="search" name="employeeNumber" th:value="${employeeNumberFilter}">
-            </label>
-            <label>Employee name
-                <input type="search" name="employeeName" th:value="${employeeNameFilter}">
-            </label>
+            <label>Date<input type="date" name="recordDate" th:value="${recordDate}"></label>
+            <label>Team<select name="recordTeamId"><option value="">All teams</option>
+                <option th:each="team : ${teams}" th:value="${team.id}"
+                        th:selected="${recordTeamId != null and team.id == recordTeamId}" th:text="${team.name}"></option>
+            </select></label>
+            <label>Employee name or number<input type="search" name="employeeSearch" th:value="${employeeSearchFilter}"></label>
             <button type="submit">View Attendance Records</button>
             <a class="button-link secondary-button" th:href="@{/attendance}">Clear Filters</a>
         </form>
@@ -97,84 +53,49 @@
             <span>Absent: <strong th:text="${attendanceTotals.absent}"></strong></span>
             <span>Attendance: <strong th:text="${#numbers.formatDecimal(attendanceTotals.percentage, 1, 1) + '%'}"></strong></span>
         </div>
-        <div class="table-scroll">
-            <table>
-                <thead><tr><th>Date</th><th>Team</th><th>Employee Number</th><th>Employee Name</th><th>Status</th></tr></thead>
-                <tbody>
-                <tr th:each="row : ${attendanceRecords}">
-                    <td th:text="${row.date}"></td><td th:text="${row.teamName}"></td>
-                    <td th:text="${row.employeeNumber}"></td><td th:text="${row.employeeName}"></td>
-                    <td th:text="${row.status == 'P' ? 'P — Present' : 'A — Absent'}"></td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(attendanceRecords)}"><td colspan="5">No attendance records match these filters.</td></tr>
-                </tbody>
-            </table>
-        </div>
+        <div class="table-scroll"><table>
+            <thead><tr><th>Date</th><th>Team</th><th>Employee Number</th><th>Name</th><th>Status</th></tr></thead>
+            <tbody>
+            <tr th:each="row : ${attendanceRecords}"><td th:text="${row.date}"></td><td th:text="${row.teamName}"></td>
+                <td th:text="${row.employeeNumber}"></td><td th:text="${row.employeeName}"></td><td th:text="${row.status == 'P' ? 'P - Present' : 'A - Absent'}"></td></tr>
+            <tr th:if="${#lists.isEmpty(attendanceRecords)}"><td colspan="5">No attendance records match these filters.</td></tr>
+            </tbody>
+        </table></div>
     </section>
 
-    <section class="panel" id="teams">
-        <h2>Team Setup</h2>
-        <p class="help-text">Four teams are provided. Update their names here; employees and saved attendance remain linked to the same team.</p>
-        <div class="table-scroll">
-            <table><thead><tr><th>Team</th><th>Team Name</th><th>Action</th></tr></thead>
-                <tbody><tr th:each="team : ${teams}">
-                    <td th:text="${team.id}"></td>
-                    <td><form class="inline-form" method="post" th:action="@{/attendance/team/save}">
-                        <input type="hidden" name="teamId" th:value="${team.id}">
-                        <input name="teamName" maxlength="80" required th:value="${team.name}">
-                        <button type="submit">Update Team</button>
-                    </form></td>
-                    <td>Configured</td>
-                </tr></tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="panel" id="employees">
-        <h2>Employee Setup</h2>
+    <details class="panel" id="configuration">
+        <summary><strong>Team and Employee Setup</strong></summary>
+        <p class="help-text">Four teams are provided. Employee records entered on the form above are added or updated automatically.</p>
+        <div class="table-scroll"><table><thead><tr><th>Team</th><th>Configured name</th><th>Action</th></tr></thead>
+            <tbody><tr th:each="team : ${teams}"><td th:text="${team.id}"></td><td>
+                <form class="inline-form" method="post" th:action="@{/attendance/team/save}">
+                    <input type="hidden" name="teamId" th:value="${team.id}"><input name="teamName" maxlength="80" required th:value="${team.name}">
+                    <button type="submit">Update Team</button>
+                </form></td><td>Configured</td></tr></tbody>
+        </table></div>
+        <h3>Employee directory</h3>
         <form class="form-grid" method="post" th:action="@{/attendance/employee/save}">
             <input type="hidden" name="employeeId" th:value="${editEmployee != null ? editEmployee.id : ''}">
-            <label>Employee number
-                <input name="employeeNumber" maxlength="40" required
-                       th:value="${editEmployee != null ? editEmployee.employeeNumber : ''}">
-            </label>
-            <label>Employee name
-                <input name="employeeName" maxlength="150" required
-                       th:value="${editEmployee != null ? editEmployee.name : ''}">
-            </label>
-            <label>Team
-                <select name="teamId" required>
-                    <option value="">Select a team</option>
-                    <option th:each="team : ${teams}" th:value="${team.id}"
-                            th:selected="${editEmployee != null and team.id == editEmployee.teamId}"
-                            th:text="${team.name}"></option>
-                </select>
-            </label>
-            <div class="actions align-end">
-                <button type="submit" th:text="${editEmployee != null ? 'Update Employee' : 'Add Employee'}"></button>
-                <a class="button-link secondary-button" th:href="@{/attendance#employees}">Reset</a>
-            </div>
+            <label>Employee number<input name="employeeNumber" maxlength="40" required th:value="${editEmployee != null ? editEmployee.employeeNumber : ''}"></label>
+            <label>Employee name<input name="employeeName" maxlength="150" required th:value="${editEmployee != null ? editEmployee.name : ''}"></label>
+            <label>Team<select name="teamId" required><option value="">Select team</option>
+                <option th:each="team : ${teams}" th:value="${team.id}" th:selected="${editEmployee != null and team.id == editEmployee.teamId}" th:text="${team.name}"></option>
+            </select></label>
+            <div class="actions align-end"><button type="submit" th:text="${editEmployee != null ? 'Update Employee' : 'Add Employee'}"></button>
+                <a class="button-link secondary-button" th:href="@{/attendance#configuration}">Reset</a></div>
         </form>
-        <div class="table-scroll">
-            <table>
-                <thead><tr><th>Employee Number</th><th>Employee Name</th><th>Team</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody>
-                <tr th:each="employee : ${employees}">
-                    <td th:text="${employee.employeeNumber}"></td><td th:text="${employee.name}"></td>
-                    <td th:text="${employee.teamName}"></td><td th:text="${employee.active ? 'Active' : 'Inactive'}"></td>
-                    <td class="actions-cell">
-                        <a th:href="@{/attendance(editEmployeeId=${employee.id})}">Edit</a>
-                        <form method="post" th:action="@{/attendance/employee/{id}/active(id=${employee.id})}">
-                            <input type="hidden" name="active" th:value="${!employee.active}">
-                            <button type="submit" class="text-button" th:text="${employee.active ? 'Deactivate' : 'Activate'}"></button>
-                        </form>
-                    </td>
-                </tr>
+        <div class="table-scroll"><table><thead><tr><th>Employee number</th><th>Name</th><th>Team</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody><tr th:each="employee : ${employees}"><td th:text="${employee.employeeNumber}"></td><td th:text="${employee.name}"></td>
+                <td th:text="${employee.teamName}"></td><td th:text="${employee.active ? 'Active' : 'Inactive'}"></td><td class="actions-cell">
+                    <a th:href="@{/attendance(editEmployeeId=${employee.id})}">Edit</a>
+                    <form method="post" th:action="@{/attendance/employee/{id}/active(id=${employee.id})}">
+                        <input type="hidden" name="active" th:value="${!employee.active}">
+                        <button type="submit" class="text-button" th:text="${employee.active ? 'Deactivate' : 'Activate'}"></button>
+                    </form>
+                </td></tr>
                 <tr th:if="${#lists.isEmpty(employees)}"><td colspan="5">No employees configured yet.</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
+            </tbody></table></div>
+    </details>
 </main>
 </body>
 </html>

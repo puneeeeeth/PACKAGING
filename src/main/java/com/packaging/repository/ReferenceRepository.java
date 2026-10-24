@@ -53,6 +53,19 @@ public class ReferenceRepository {
                         rs.getString("team_name"), rs.getBoolean("is_active")));
     }
 
+    public Employee employeeByNumber(String employeeNumber) {
+        List<Employee> employees = jdbc.query("""
+                SELECT e.employee_id, e.employee_number, e.employee_name, e.team_id,
+                       t.team_name, e.is_active
+                FROM employees e JOIN teams t ON t.team_id = e.team_id
+                WHERE UPPER(e.employee_number) = UPPER(:number)
+                """, new MapSqlParameterSource("number", employeeNumber),
+                (rs, row) -> new Employee(rs.getLong("employee_id"), rs.getString("employee_number"),
+                        rs.getString("employee_name"), rs.getLong("team_id"), rs.getString("team_name"),
+                        rs.getBoolean("is_active")));
+        return employees.isEmpty() ? null : employees.get(0);
+    }
+
     public long saveEmployee(Long id, String number, String name, long teamId) {
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("number", number)

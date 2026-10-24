@@ -10,36 +10,20 @@
 <div class="home-layout">
     <aside class="home-sidebar">
         <div class="brand-lockup">
-            <span class="brand-mark">P</span>
-            <span><strong>PACKAGING</strong><small>FACTORY OPERATIONS</small></span>
+            <img class="bosch-logo" th:src="@{/images/bosch-logo.png}" alt="Bosch">
         </div>
-        <p class="sidebar-label">MAIN MODULES</p>
         <nav class="home-navigation" aria-label="Main modules">
-            <a class="nav-item" th:href="@{/attendance}"><span class="nav-index">01</span><span>Attendance</span><span class="nav-arrow">&rsaquo;</span></a>
-            <a class="nav-item" th:href="@{/production}"><span class="nav-index">02</span><span>Production Entry</span><span class="nav-arrow">&rsaquo;</span></a>
-            <a class="nav-item" th:href="@{/summary}"><span class="nav-index">03</span><span>Summary</span><span class="nav-arrow">&rsaquo;</span></a>
-            <a class="nav-item" th:href="@{/report}"><span class="nav-index">04</span><span>Report</span><span class="nav-arrow">&rsaquo;</span></a>
+            <a class="nav-item" th:href="@{/attendance}">Attendance</a>
+            <a class="nav-item" th:href="@{/production}">Production Entry</a>
+            <a class="nav-item" th:href="@{/summary}">Summary</a>
+            <a class="nav-item" th:href="@{/report}">Report</a>
         </nav>
-        <div class="sidebar-footer">
-            <span class="status-light"></span>
-            <span><strong>Local system</strong><small>Records saved on this computer</small></span>
-        </div>
     </aside>
 
     <main class="home-main">
         <header class="home-header">
-            <div>
-                <p class="eyebrow">FACTORY OPERATIONS / OVERVIEW</p>
-                <h1>Packaging Management System</h1>
-                <p class="home-subtitle">Daily attendance and production at a glance.</p>
-            </div>
-            <div class="date-chip"><span>Today</span><strong th:text="${today}"></strong></div>
+            <h1>Packaging Management System</h1>
         </header>
-
-        <section class="demo-notice" aria-label="Demo data notice">
-            <strong>DEMO DATA</strong>
-            <span>Starter records are clearly labeled. Replace them with your factory's employee and production information.</span>
-        </section>
 
         <section class="stat-grid" aria-label="Today's totals">
             <article class="stat-card stat-present">
@@ -67,7 +51,7 @@
         <section class="detail-grid">
             <article class="panel">
                 <div class="panel-heading">
-                    <div><p class="eyebrow">PEOPLE</p><h2>Attendance by team</h2></div>
+                    <div><h2>Attendance by team</h2></div>
                 </div>
                 <div class="table-scroll">
                     <table>
@@ -86,7 +70,7 @@
 
             <article class="panel">
                 <div class="panel-heading">
-                    <div><p class="eyebrow">OUTPUT</p><h2>Production by part</h2></div>
+                    <div><h2>Production by part</h2></div>
                 </div>
                 <div class="table-scroll">
                     <table>
@@ -102,7 +86,6 @@
             </article>
         </section>
 
-        <footer class="home-footer">Totals above use saved database records for the selected day. Sample employee names and quantities are not real factory data.</footer>
     </main>
 </div>
 </body>

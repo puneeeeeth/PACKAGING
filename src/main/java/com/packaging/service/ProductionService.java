@@ -22,11 +22,26 @@ public class ProductionService {
         return repository.records(date, fromDate, toDate, partId, markId, shiftId);
     }
 
+    public List<ProductionRecord> records(LocalDate date, LocalDate fromDate, LocalDate toDate,
+                                          Long partId, Long markId, Long shiftId, String operatorName) {
+        validateRange(fromDate, toDate);
+        return repository.records(date, fromDate, toDate, partId, markId, shiftId, operatorName);
+    }
+
     @Transactional
     public long save(Long id, LocalDate date, Long partId, Long markId, Long shiftId,
                      Integer quantity, String remarks) {
+        return save(id, date, "Unassigned", partId, markId, shiftId, quantity, remarks);
+    }
+
+    @Transactional
+    public long save(Long id, LocalDate date, String operatorName, Long partId, Long markId, Long shiftId,
+                     Integer quantity, String remarks) {
         if (date == null) {
             throw new IllegalArgumentException("Production date is required.");
+        }
+        if (operatorName == null || operatorName.isBlank() || operatorName.trim().length() > 150) {
+            throw new IllegalArgumentException("Enter an operator name of 150 characters or fewer.");
         }
         if (partId == null || (!repository.activePart(partId) &&
                 (id == null || !repository.entryUsesLookup(id, "part", partId)))) {
@@ -34,9 +49,9 @@ public class ProductionService {
         }
         if (markId == null || (!repository.activeMark(markId) &&
                 (id == null || !repository.entryUsesLookup(id, "mark", markId)))) {
-            throw new IllegalArgumentException("Select an active mark.");
+            throw new IllegalArgumentException("Select an active market.");
         }
-        if (shiftId == null || (!repository.activeShift(shiftId) &&
+        if (shiftId != null && (!repository.activeShift(shiftId) &&
                 (id == null || !repository.entryUsesLookup(id, "shift", shiftId)))) {
             throw new IllegalArgumentException("Select an active shift.");
         }
@@ -46,7 +61,7 @@ public class ProductionService {
         if (remarks != null && remarks.length() > 1000) {
             throw new IllegalArgumentException("Remarks must be 1,000 characters or fewer.");
         }
-        return repository.save(id, date, partId, markId, shiftId, quantity,
+        return repository.save(id, date, operatorName.trim(), partId, markId, shiftId, quantity,
                 remarks == null || remarks.isBlank() ? null : remarks.trim());
     }
 

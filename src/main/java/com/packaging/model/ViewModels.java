@@ -38,7 +38,8 @@ public final class ViewModels {
     }
 
     public record ProductionRecord(long id, LocalDate date, long partId, String partNumber,
-                                   long markId, String markName, long shiftId, String shiftName,
+                                   long markId, String markName, Long shiftId, String shiftName,
+                                   String operatorName,
                                    int quantity, String remarks,
                                    LocalDateTime createdAt, LocalDateTime updatedAt) {
     }
@@ -51,7 +52,8 @@ public final class ViewModels {
     }
 
     public record SummaryData(AttendanceTotals attendance, List<TeamAttendance> teams,
-                              ProductionTotals production) {
+                              ProductionTotals production, int manpowerAvailability,
+                              double productivity) {
     }
 
     public record ReportData(String type, LocalDate fromDate, LocalDate toDate,

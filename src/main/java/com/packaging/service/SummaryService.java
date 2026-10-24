@@ -45,7 +45,11 @@ public class SummaryService {
                 partId, markId, shiftId);
         AttendanceTotals attendanceTotals = attendanceService.totals(attendance);
         List<TeamAttendance> teams = attendanceService.byTeam(attendance);
-        return new SummaryData(attendanceTotals, teams, productionTotals(production));
+        ProductionTotals productionTotals = productionTotals(production);
+        int availability = calculateAvailability(attendanceTotals);
+        double productivity = availability == 0 ? 0.0
+                : Math.round(productionTotals.total() * 10.0 / availability) / 10.0;
+        return new SummaryData(attendanceTotals, teams, productionTotals, availability, productivity);
     }
 
     public ProductionTotals productionTotals(List<ProductionRecord> records) {
@@ -56,14 +60,17 @@ public class SummaryService {
                 groups(records, ProductionRecord::shiftName));
     }
 
-    public Long calculateAvailability(List<ProductionRecord> records, AttendanceTotals attendance) {
-        return null;
+    public int calculateAvailability(AttendanceTotals attendance) {
+        return attendance.present();
     }
 
     private List<ProductionGroup> groups(List<ProductionRecord> records,
                                          Function<ProductionRecord, String> name) {
         Map<String, Long> totals = records.stream().collect(Collectors.groupingBy(
-                name, Collectors.summingLong(ProductionRecord::quantity)));
+                record -> {
+                    String group = name.apply(record);
+                    return group == null || group.isBlank() ? "Unspecified" : group;
+                }, Collectors.summingLong(ProductionRecord::quantity)));
         return totals.entrySet().stream()
                 .map(entry -> new ProductionGroup(entry.getKey(), entry.getValue()))
                 .sorted(Comparator.comparing(ProductionGroup::name, String.CASE_INSENSITIVE_ORDER))

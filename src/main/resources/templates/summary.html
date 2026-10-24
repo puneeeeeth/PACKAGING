@@ -7,88 +7,58 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-<header class="page-header"><a class="home-link" th:href="@{/}">Home</a><h1>Summary</h1></header>
+<header class="page-header"><img class="bosch-logo" th:src="@{/images/bosch-logo.png}" alt="Bosch"><a class="home-link" th:href="@{/}">Home</a><h1>Summary</h1></header>
 <main class="page-shell">
-    <p class="message error" th:if="${error}" th:text="${error}"></p>
     <section class="panel">
-        <h2>Filters</h2>
+        <div class="panel-heading"><div><p class="eyebrow">AUTO-CALCULATED FROM SAVED RECORDS</p><h2>View by date</h2></div></div>
         <form class="filter-form" method="get" th:action="@{/summary}">
-            <label>Selected date
-                <input type="date" name="selectedDate" th:value="${selectedDate}">
-            </label>
-            <label>From date
-                <input type="date" name="fromDate" th:value="${fromDate}">
-            </label>
-            <label>To date
-                <input type="date" name="toDate" th:value="${toDate}">
-            </label>
-            <label>Team
-                <select name="teamId"><option value="">All teams</option>
-                    <option th:each="team : ${teams}" th:value="${team.id}"
-                            th:selected="${teamId != null and team.id == teamId}" th:text="${team.name}"></option>
-                </select>
-            </label>
-            <label>Part number
-                <select name="partId"><option value="">All parts</option>
-                    <option th:each="part : ${parts}" th:value="${part.id}"
-                            th:selected="${partId != null and part.id == partId}"
-                            th:text="${part.code + (part.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <label>Mark
-                <select name="markId"><option value="">All marks</option>
-                    <option th:each="mark : ${marks}" th:value="${mark.id}"
-                            th:selected="${markId != null and mark.id == markId}"
-                            th:text="${mark.code + (mark.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
-            <label>Shift
-                <select name="shiftId"><option value="">All shifts</option>
-                    <option th:each="shift : ${shifts}" th:value="${shift.id}"
-                            th:selected="${shiftId != null and shift.id == shiftId}"
-                            th:text="${shift.code + (shift.active ? '' : ' (Inactive)')}"></option>
-                </select>
-            </label>
+            <label>Date<input type="date" name="selectedDate" th:value="${selectedDate}" required></label>
+            <label>Team<select name="teamId"><option value="">All teams</option>
+                <option th:each="team : ${teams}" th:value="${team.id}" th:selected="${teamId != null and team.id == teamId}" th:text="${team.name}"></option>
+            </select></label>
+            <label>Part number<select name="partId"><option value="">All parts</option>
+                <option th:each="part : ${parts}" th:value="${part.id}" th:selected="${partId != null and part.id == partId}" th:text="${part.code}"></option>
+            </select></label>
+            <label>Market<select name="markId"><option value="">All markets</option>
+                <option th:each="market : ${markets}" th:value="${market.id}" th:selected="${markId != null and market.id == markId}" th:text="${market.code}"></option>
+            </select></label>
             <button type="submit">Apply Filters</button>
             <a class="button-link secondary-button" th:href="@{/summary}">Clear Filters</a>
         </form>
-        <p class="help-text">Selected date takes priority over the date range. Attendance filters use team; production filters use part, mark, and shift.</p>
+        <div class="actions">
+            <a class="button-link" th:href="@{/summary/export/excel(selectedDate=${selectedDate},teamId=${teamId},partId=${partId},markId=${markId})}">Export Summary to Excel</a>
+        </div>
     </section>
 
-    <section class="panel" th:if="${summary != null}">
+    <section class="panel">
         <h2>Attendance Summary</h2>
-        <div class="summary-line">
-            <span>Total manpower: <strong th:text="${summary.attendance.manpower}"></strong></span>
-            <span>Present: <strong th:text="${summary.attendance.present}"></strong></span>
-            <span>Absent: <strong th:text="${summary.attendance.absent}"></strong></span>
-            <span>Attendance: <strong th:text="${#numbers.formatDecimal(summary.attendance.percentage, 1, 1) + '%'}"></strong></span>
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-label">Total Manpower</span><strong class="stat-value" th:text="${summary.attendance.manpower}"></strong><span class="stat-caption">Saved records for this date and team filter</span></div>
+            <div class="stat-card"><span class="stat-label">Present</span><strong class="stat-value" th:text="${summary.attendance.present}"></strong><span class="stat-caption">Available manpower</span></div>
+            <div class="stat-card stat-absent"><span class="stat-label">Absent</span><strong class="stat-value" th:text="${summary.attendance.absent}"></strong><span class="stat-caption">Recorded absent</span></div>
+            <div class="stat-card stat-rate"><span class="stat-label">Attendance</span><strong class="stat-value" th:text="${#numbers.formatDecimal(summary.attendance.percentage, 1, 1) + '%'}"></strong><span class="stat-caption">Present / total manpower</span></div>
         </div>
         <h3>Team-wise Attendance</h3>
-        <div class="table-scroll">
-            <table><thead><tr><th>Team</th><th>Total Manpower</th><th>Present</th><th>Absent</th><th>Attendance</th></tr></thead>
-                <tbody><tr th:each="row : ${summary.teams}">
-                    <td th:text="${row.teamName}"></td><td th:text="${row.manpower}"></td><td th:text="${row.present}"></td><td th:text="${row.absent}"></td>
-                    <td th:text="${#numbers.formatDecimal(row.percentage, 1, 1) + '%'}"></td>
-                </tr><tr th:if="${#lists.isEmpty(summary.teams)}"><td colspan="5">No attendance records match these filters.</td></tr></tbody>
-            </table>
-        </div>
+        <div class="table-scroll"><table><thead><tr><th>Team</th><th>Total Manpower</th><th>Present</th><th>Absent</th><th>Attendance</th></tr></thead>
+            <tbody><tr th:each="row : ${summary.teams}"><td th:text="${row.teamName}"></td><td th:text="${row.manpower}"></td><td th:text="${row.present}"></td><td th:text="${row.absent}"></td><td th:text="${#numbers.formatDecimal(row.percentage, 1, 1) + '%'}"></td></tr>
+                <tr th:if="${#lists.isEmpty(summary.teams)}"><td colspan="5">No attendance records for this date.</td></tr></tbody>
+        </table></div>
     </section>
 
-    <section class="panel" th:if="${summary != null}">
+    <section class="panel">
         <h2>Production Summary</h2>
-        <p class="summary-line"><strong>Total production: <span th:text="${summary.production.total}"></span></strong></p>
-        <p>Total availability: Not configured (business definition required).</p>
-        <div class="config-grid">
-            <div><h3>Part-wise Production</h3><table><thead><tr><th>Part number</th><th>Quantity</th></tr></thead>
-                <tbody><tr th:each="row : ${summary.production.byPart}"><td th:text="${row.name}"></td><td th:text="${row.quantity}"></td></tr>
-                    <tr th:if="${#lists.isEmpty(summary.production.byPart)}"><td colspan="2">No production records.</td></tr></tbody></table></div>
-            <div><h3>Mark-wise Production</h3><table><thead><tr><th>Mark</th><th>Quantity</th></tr></thead>
-                <tbody><tr th:each="row : ${summary.production.byMark}"><td th:text="${row.name}"></td><td th:text="${row.quantity}"></td></tr>
-                    <tr th:if="${#lists.isEmpty(summary.production.byMark)}"><td colspan="2">No production records.</td></tr></tbody></table></div>
-            <div><h3>Shift-wise Production</h3><table><thead><tr><th>Shift</th><th>Quantity</th></tr></thead>
-                <tbody><tr th:each="row : ${summary.production.byShift}"><td th:text="${row.name}"></td><td th:text="${row.quantity}"></td></tr>
-                    <tr th:if="${#lists.isEmpty(summary.production.byShift)}"><td colspan="2">No production records.</td></tr></tbody></table></div>
+        <div class="stat-grid">
+            <div class="stat-card stat-production"><span class="stat-label">Grand Total Production</span><strong class="stat-value" th:text="${summary.production.total}"></strong><span class="stat-caption">Units saved for this date</span></div>
+            <div class="stat-card"><span class="stat-label">Total Manpower Availability</span><strong class="stat-value" th:text="${summary.manpowerAvailability}"></strong><span class="stat-caption">Employees marked Present</span></div>
+            <div class="stat-card stat-rate"><span class="stat-label">Productivity</span><strong class="stat-value" th:text="${#numbers.formatDecimal(summary.productivity, 1, 1)}"></strong><span class="stat-caption">Production units per available employee</span></div>
         </div>
+        <p class="help-text">Productivity = total production / employees marked Present. When no employees are marked Present, productivity is 0.</p>
+        <h3>Market-wise Production</h3>
+        <div class="table-scroll"><table><thead><tr><th>Market</th><th>Quantity</th></tr></thead>
+            <tbody><tr th:each="row : ${summary.production.byMark}"><td th:text="${row.name}"></td><td th:text="${row.quantity}"></td></tr>
+                <tr th:if="${#lists.isEmpty(summary.production.byMark)}"><td colspan="2">No production records for this date.</td></tr></tbody>
+            <tfoot><tr><th>Grand Total Production</th><th th:text="${summary.production.total}"></th></tr></tfoot>
+        </table></div>
     </section>
 </main>
 </body>
